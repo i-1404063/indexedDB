@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IndexedDB-practice</title>
+</head>
+
+<body>
+  DB<input type="text" value="notes" id="txtDB">
+  Version<input type="text" value="1" id="txtVersion">
+  <button id="btnCreateDB">Create DB</button>
+  <button id="btnAddNote">Add Note</button>
+  <button id="btnViewNote">View Notes</button>
+
+  <script>
+    let db = null;
+    const dbButton = document.getElementById("btnCreateDB");
+    const btnNote = document.getElementById("btnAddNote");
+    const btnViewNote = document.getElementById("btnViewNote");
+    dbButton.addEventListener("click", createDB);
+    btnNote.addEventListener("click", addNote);
+    btnViewNote.addEventListener("click", viewNotes);
+
+    function viewNotes() {
+
+      const tx = db.transaction("personal__notes", "readonly");
+      const pNotes = tx.objectStore("personal__notes");
+
+      const request = pNotes.openCursor();
+
+      request.onsuccess = e => {
+
+        // const cursor = e.target.result;
+
+        if (cursor) {
+          alert(`Title: ${cursor.key} Details: ${cursor.value.detail}`);
+          //do something with the cursor
+          cursor.continue();
+        }
+      }
+    }
+
+    function addNote() {
+
+      const note = {
+        title: "note" + Math.random(),
+        detail: "a little note baby"
+      }
+
+      const tx = db.transaction("personal__notes", "readwrite");
+      tx.onerror = e => alert(`error is : ${e.target.error}`);
+      const pNotes = tx.objectStore("personal__notes");
+      pNotes.add(note);
+    }
+
+    function createDB() {
+      const dbName = document.getElementById("txtDB").value;
+      const dbVersion = document.getElementById("txtVersion").value;
+
+      const request = indexedDB.open(dbName, dbVersion);
+
+      request.onupgradeneeded = e => {
+        db = e.target.result;
+
+        const p_notes = db.createObjectStore("personal__notes", {
+          keyPath: "title"
+        });
+        const todo_notes = db.createObjectStore("todo__notes", {
+          keyPath: "title"
+        });
+        alert("upgraded is called.");
+      };
+
+      request.onsuccess = e => {
+        db = e.target.result;
+        alert(`success is called. database name: ${db.name} version: ${db.version}`);
+      };
+
+      request.onerror = e => {
+        alert(`error ${e.target.error} was found`);
+      };
+    }
+  </script>
+</body>
+
+</html>
